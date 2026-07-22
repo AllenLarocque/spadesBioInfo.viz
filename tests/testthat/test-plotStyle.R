@@ -24,3 +24,17 @@ test_that("projectPlotStyle carries the treatmentPositions disturbance map", {
   expect_equal(treatmentPositions(style),
                c(Control = 0, `60` = 40, `30` = 70, ST = 90, CC = 100))   # % cut; ST = 90
 })
+
+test_that("groupPalette dispatches: all-treatment -> treatment colours, else qualitative (no mix/warn)", {
+  style <- projectPlotStyle()
+  # all levels are treatment levels -> identical to treatmentPalette (disturbance colours)
+  expect_equal(groupPalette(style, c("Control", "CC")),
+               treatmentPalette(style, c("Control", "CC")))
+  # any non-treatment level -> qualitative for ALL levels, no warning, no treatment colour mixed in
+  expect_silent(p <- groupPalette(style, c("Control", "siteB")))
+  expect_true(all(grepl("^#", p)))                       # all hex (qualitative), none are named treatment colours
+  expect_false(any(p %in% style$treatmentColours))
+  expect_equal(names(p), c("Control", "siteB"))
+  # duplicate levels collapse; single level works
+  expect_length(groupPalette(style, c("A", "A", "B")), 2)
+})

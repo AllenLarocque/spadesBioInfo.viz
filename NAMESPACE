@@ -1,6 +1,7 @@
 export(projectPlotStyle)
 export(reviewTheme)
 export(treatmentPalette)
+export(groupPalette)
 export(qualitativePalette)
 export(divergingPalette)
 export(referenceLineColour)

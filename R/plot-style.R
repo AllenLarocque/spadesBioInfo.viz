@@ -12,7 +12,7 @@ projectPlotStyle <- function() {
     # brown (clearcut). Name-keyed so any subset of levels gets its correct hue. Hue order tracks
     # treatmentPositions (% cut): Control(0) -> 60(40) -> 30(70) -> ST(90) -> CC(100). ST is 10%
     # retention = 90% cut, so it sits at the brown end (tan3), next to CC — matching the thesis
-    # oracle (example_scripts .../Plots - RDA_fullmodel.R: "10% retention" = "tan3").
+    # oracle (resources/example_scripts .../Plots - RDA_fullmodel.R: "10% retention" = "tan3").
     treatmentColours = c(Control = "darkolivegreen", `60` = "darkolivegreen3",
                          `30` = "tan", ST = "tan3", CC = "chocolate4"),
     qualitative = c("#E69F00", "#56B4E9", "#009E73", "#F0E442",   # Okabe-Ito, colourblind-safe
@@ -43,6 +43,16 @@ treatmentPalette <- function(style, levels) {
     cols[miss] <- qualitativePalette(style, levels[miss])
   }
   stats::setNames(unname(cols), levels)
+}
+
+#' Colours for an arbitrary grouping variable: the ordered design-factor (treatment) palette when
+#' EVERY level is a design-factor level, otherwise the qualitative palette. All-or-nothing (never a
+#' mix), no warning. Generic — reads the design's factor levels from `style` (no hardcoded names).
+#' @export
+groupPalette <- function(style, levels) {
+  levels <- as.character(unique(levels))
+  if (all(levels %in% names(style$treatmentColours))) treatmentPalette(style, levels)
+  else                                                qualitativePalette(style, levels)
 }
 
 #' Colourblind-safe qualitative colours for arbitrary `levels` (Okabe-Ito, position-recycled).
