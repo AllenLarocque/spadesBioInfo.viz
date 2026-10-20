@@ -4,7 +4,7 @@
 #' @param groupColours Optional named character vector of colours keyed by group level (e.g.
 #'   `c(A = "red", B = "blue")`); `NULL` (default) means every grouping uses the qualitative palette.
 #'   The study supplies its own from config; the package carries no study-specific colours.
-#' @return list(theme, groupColours, qualitative, diverging, referenceLine).
+#' @return list(theme, groupColours, qualitative, diverging, sequential, referenceLine).
 #' @export
 projectPlotStyle <- function(groupColours = NULL) {
   list(
@@ -15,6 +15,7 @@ projectPlotStyle <- function(groupColours = NULL) {
     qualitative = c("#E69F00", "#56B4E9", "#009E73", "#F0E442",   # Okabe-Ito, colourblind-safe
                     "#0072B2", "#D55E00", "#CC79A7", "#000000"),
     diverging   = "Blue-Red 3",                    # colorspace diverging: blue = -, red = +
+    sequential  = "Batlow",                        # colorspace sequential, perceptually ordered; colour-vision safe up to ~8 levels
     referenceLine = "grey60"
   )
 }
@@ -25,12 +26,18 @@ reviewTheme <- function(style) style$theme
 
 #' Colours for an arbitrary grouping variable: `style$groupColours[levels]` when EVERY level is named
 #' in `groupColours`, otherwise the qualitative palette assigned in level order. All-or-nothing
-#' (never a mix), no warning. Generic: no hardcoded level names.
+#' (never a mix), no warning. Generic: no hardcoded level names. With `ordered = TRUE` the fallback is
+#' instead the sequential palette (`sequentialPalette(style, length(levels))`) named by `levels`.
+#' @param ordered Logical; `TRUE` when the levels are ordered (e.g. a gradient) and the fallback should
+#'   be the sequential rather than the qualitative palette (distinguishable only up to about 8 levels,
+#'   see [sequentialPalette()]).
 #' @export
-groupPalette <- function(style, levels) {
+groupPalette <- function(style, levels, ordered = FALSE) {
   levels <- as.character(unique(levels))
   if (length(levels) && all(levels %in% names(style$groupColours)))
     stats::setNames(unname(style$groupColours[levels]), levels)
+  else if (ordered)
+    stats::setNames(sequentialPalette(style, length(levels)), levels)
   else
     qualitativePalette(style, levels)
 }
@@ -45,6 +52,12 @@ qualitativePalette <- function(style, levels) {
 #' `n` diverging colours (colorspace Blue-Red 3): blue = negative, red = positive.
 #' @export
 divergingPalette <- function(style, n) colorspace::diverging_hcl(n, palette = style$diverging)
+
+#' `n` sequential colours (colorspace Batlow by default): perceptually ordered and colour-vision-deficiency
+#' safe for small `n`. Limit: Batlow stays distinguishable (greyscale Delta E >= 10, see
+#' [checkPalette()]) only up to about 8 levels; use fewer levels or another palette beyond that.
+#' @export
+sequentialPalette <- function(style, n) colorspace::sequential_hcl(n, palette = style$sequential)
 
 #' The colour for zero/reference lines and other neutral chrome.
 #' @export
