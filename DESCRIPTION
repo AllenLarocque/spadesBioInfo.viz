@@ -1,7 +1,7 @@
 Package: spadesBioInfo.viz
 Type: Package
 Title: Shared Presentation Layer for the spades_bioinformatics Workbench
-Version: 0.1.1
+Version: 0.2.0
 Authors@R: person("Allen", "Larocque", email = "allen.larocque@gmail.com", role = c("aut", "cre"))
 Description: The shared plotting style (project palette + ggplot theme accessors) and the
     review-bundle layout writer used by the workbench's presentation modules. Decoupled from

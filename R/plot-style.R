@@ -1,27 +1,20 @@
 #' The canonical project plot style: the single source of truth for palettes + theme, consumed by
 #' plotting modules ONLY through the accessors below (never by reaching into the list). See the
 #' plot-style-foundation design spec.
-#' @return list(theme, treatmentColours, qualitative, diverging, treatmentGradient, referenceLine).
+#' @param groupColours Optional named character vector of colours keyed by group level (e.g.
+#'   `c(A = "red", B = "blue")`); `NULL` (default) means every grouping uses the qualitative palette.
+#'   The study supplies its own from config; the package carries no study-specific colours.
+#' @return list(theme, groupColours, qualitative, diverging, referenceLine).
 #' @export
-projectPlotStyle <- function() {
+projectPlotStyle <- function(groupColours = NULL) {
   list(
     theme = ggplot2::theme_classic(base_size = 11) +
             ggplot2::theme(plot.title = ggplot2::element_text(size = 11, face = "bold"),
                            legend.position = "right"),
-    # Exact thesis hues, ordered by disturbance intensity (treatment_continuous): green (intact) ->
-    # brown (clearcut). Name-keyed so any subset of levels gets its correct hue. Hue order tracks
-    # treatmentPositions (% cut): Control(0) -> 60(40) -> 30(70) -> ST(90) -> CC(100). ST is 10%
-    # retention = 90% cut, so it sits at the brown end (tan3), next to CC — matching the thesis
-    # oracle (resources/example_scripts .../Plots - RDA_fullmodel.R: "10% retention" = "tan3").
-    treatmentColours = c(Control = "darkolivegreen", `60` = "darkolivegreen3",
-                         `30` = "tan", ST = "tan3", CC = "chocolate4"),
+    groupColours = groupColours,
     qualitative = c("#E69F00", "#56B4E9", "#009E73", "#F0E442",   # Okabe-Ito, colourblind-safe
                     "#0072B2", "#D55E00", "#CC79A7", "#000000"),
     diverging   = "Blue-Red 3",                    # colorspace diverging: blue = -, red = +
-    treatmentGradient = c("darkolivegreen", "chocolate4"),        # continuous green->brown endpoints
-    # Disturbance encoding (treatment_continuous). MUST match prepCoreMetadata::deriveTreatment's
-    # contMap — lets plots place categorical treatments on the continuous disturbance axis.
-    treatmentPositions = c(Control = 0, `60` = 40, `30` = 70, ST = 90, CC = 100),
     referenceLine = "grey60"
   )
 }
@@ -30,29 +23,16 @@ projectPlotStyle <- function() {
 #' @export
 reviewTheme <- function(style) style$theme
 
-#' Name-keyed treatment colours for `levels` (looked up in the disturbance-ordered master vector);
-#' a level absent from the master falls back to a qualitative colour + a warning (never errors).
-#' @export
-treatmentPalette <- function(style, levels) {
-  levels <- as.character(levels)
-  cols   <- style$treatmentColours[levels]
-  miss   <- is.na(cols)
-  if (any(miss)) {
-    warning("treatmentPalette: level(s) not in the treatment palette: ",
-            paste(levels[miss], collapse = ", "), " — using qualitative fallback.")
-    cols[miss] <- qualitativePalette(style, levels[miss])
-  }
-  stats::setNames(unname(cols), levels)
-}
-
-#' Colours for an arbitrary grouping variable: the ordered design-factor (treatment) palette when
-#' EVERY level is a design-factor level, otherwise the qualitative palette. All-or-nothing (never a
-#' mix), no warning. Generic — reads the design's factor levels from `style` (no hardcoded names).
+#' Colours for an arbitrary grouping variable: `style$groupColours[levels]` when EVERY level is named
+#' in `groupColours`, otherwise the qualitative palette assigned in level order. All-or-nothing
+#' (never a mix), no warning. Generic: no hardcoded level names.
 #' @export
 groupPalette <- function(style, levels) {
   levels <- as.character(unique(levels))
-  if (all(levels %in% names(style$treatmentColours))) treatmentPalette(style, levels)
-  else                                                qualitativePalette(style, levels)
+  if (length(levels) && all(levels %in% names(style$groupColours)))
+    stats::setNames(unname(style$groupColours[levels]), levels)
+  else
+    qualitativePalette(style, levels)
 }
 
 #' Colourblind-safe qualitative colours for arbitrary `levels` (Okabe-Ito, position-recycled).
@@ -69,7 +49,3 @@ divergingPalette <- function(style, n) colorspace::diverging_hcl(n, palette = st
 #' The colour for zero/reference lines and other neutral chrome.
 #' @export
 referenceLineColour <- function(style) style$referenceLine
-
-#' The disturbance-axis position (treatment_continuous encoding) of each treatment level.
-#' @export
-treatmentPositions <- function(style) style$treatmentPositions
