@@ -4,7 +4,7 @@ thesisColours <- c(Control = "darkolivegreen", `60` = "darkolivegreen3",
 test_that("projectPlotStyle exposes a theme + palettes and no study-specific fields", {
   style <- projectPlotStyle()
   expect_true(inherits(reviewTheme(style), c("theme", "gg")))
-  expect_named(style, c("theme", "groupColours", "qualitative", "diverging", "referenceLine"))
+  expect_named(style, c("theme", "groupColours", "qualitative", "diverging", "sequential", "referenceLine"))
   q <- qualitativePalette(style, c("flat", "with_block"))
   expect_equal(names(q), c("flat", "with_block")); expect_true(all(grepl("^#", q)))
   expect_length(divergingPalette(style, 5), 5)
