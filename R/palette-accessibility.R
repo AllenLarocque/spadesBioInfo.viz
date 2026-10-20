@@ -69,8 +69,10 @@ paletteDistinctness <- function(cols, vision = c("normal", "deutan", "protan", "
 #'   decreasing) in the order given.
 #' * `"diverging"`: the middle is the L* extremum: L* is strictly monotonic from each end to the
 #'   middle, in the SAME direction on both arms (both rising to a light middle, or both falling to
-#'   a dark middle; odd `n`: the middle colour belongs to both arms), and every mirrored pair (`cols[i]` vs `cols[n + 1 - i]`, the middle
-#'   excluded) has Delta E >= `minDeltaE` under each of the four vision types.
+#'   a dark middle; odd `n`: the middle colour belongs to both arms), and every left-arm colour
+#'   has Delta E >= `minDeltaE` from every right-arm colour (check `cross_arm_delta_e`; the middle
+#'   excluded) under each of the four vision types, so no colour on one arm can be confused with
+#'   any colour on the other. Colours within one arm are separated by the L* check only.
 #'
 #' Unparseable colour names produce a failing row instead of an error. Limit: `NA` is not detected
 #' (grDevices treats it as white).
@@ -109,13 +111,19 @@ checkPalette <- function(cols, type = c("qualitative", "sequential", "diverging"
       dl <- dir(left); dr <- dir(right)   # both arms oriented end -> middle
       rows <- list(row("L_monotonic_left", "normal", as.numeric(dl != 0), 1),
                    row("L_monotonic_right", "normal", as.numeric(dr != 0 && dr == dl), 1))
-      pairs <- lapply(four, function(v) {
-        s <- simulateVision(cols, v)
-        d <- if (half == 0) Inf else
-          min(vapply(seq_len(half), function(i) .minDeltaE(s[c(i, n + 1 - i)]), numeric(1)))
-        row("mirrored_pair_delta_e", v, d, minDeltaE)
+      # Every left-arm colour against every right-arm colour (the middle excluded for odd n):
+      # a collision need not be mirrored (e.g. cols[1] == cols[4] of 5).
+      cross <- lapply(four, function(v) {
+        lab <- .lab(simulateVision(cols, v))
+        d <- if (half == 0) Inf else {
+          l <- lab[seq_len(half), , drop = FALSE]
+          r <- lab[n - half + seq_len(half), , drop = FALSE]
+          min(sqrt(outer(l[, 1], r[, 1], "-")^2 + outer(l[, 2], r[, 2], "-")^2 +
+                   outer(l[, 3], r[, 3], "-")^2))
+        }
+        row("cross_arm_delta_e", v, d, minDeltaE)
       })
-      rows <- c(rows, pairs)
+      rows <- c(rows, cross)
     }
     do.call(rbind, rows)
   }, error = function(e) row(paste("error:", conditionMessage(e)), NA_character_, NA_real_, minDeltaE))

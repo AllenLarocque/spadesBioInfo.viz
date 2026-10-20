@@ -1,3 +1,14 @@
+# spadesBioInfo.viz 0.2.2
+
+Bug fix: `checkPalette(type = "diverging")` missed non-mirrored cross-arm collisions.
+
+* The `mirrored_pair_delta_e` rows (which compared only `cols[i]` with `cols[n + 1 - i]`) are
+  replaced by `cross_arm_delta_e`: every left-arm colour against every right-arm colour (the
+  middle excluded for odd `n`), one row per vision type (normal, deutan, protan, tritan), Delta E
+  >= `minDeltaE`. A palette such as `c("#0072B2", "#56B4E9", "#FFFFFF", "#0072B2", "#000000")`,
+  whose entries 1 and 4 are identical, now fails. The default `divergingPalette(projectPlotStyle(), 7)`
+  still passes (cross-arm minimum Delta E: normal 33.9, deutan 32.6, protan 25.8, tritan 41.2).
+
 # spadesBioInfo.viz 0.2.1
 
 Additive: reusable palette accessibility checks and an ordered default palette.
