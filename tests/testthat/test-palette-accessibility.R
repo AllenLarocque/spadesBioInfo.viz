@@ -29,7 +29,16 @@ test_that("non-monotonic sequential, plain ramps and identical mirrored arms are
   # identical mirrored pairs: arms fine, but the two arms are indistinguishable
   m <- checkPalette(c("#000000", "#555555", "#FFFFFF", "#555555", "#000000"), "diverging")
   expect_true(all(m$pass[grepl("^L_", m$check)]))
-  expect_true(all(!m$pass[m$check == "mirrored_pair_delta_e"]))
+  expect_true(all(!m$pass[m$check == "cross_arm_delta_e"]))
+})
+
+test_that("a NON-mirrored cross-arm collision is flagged (Codex PR #84)", {
+  # cols[1] == cols[4]: not a mirrored pair (1 mirrors 5), so a pairs-only check passed it.
+  m <- checkPalette(c("#0072B2", "#56B4E9", "#FFFFFF", "#0072B2", "#000000"), "diverging")
+  x <- m[m$check == "cross_arm_delta_e", ]
+  expect_setequal(x$vision, c("normal", "deutan", "protan", "tritan"))
+  expect_true(all(!x$pass))
+  expect_true(all(x$value == 0))
 })
 
 test_that("paletteDistinctness reports 5 visions; Okabe-Ito normal is the measured value", {
